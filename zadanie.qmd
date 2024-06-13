@@ -1,0 +1,207 @@
+---
+title: "Przedział ufności"
+author: "Patrycja Głuch"
+format: html
+---
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+```
+
+1. Wczytanie danych z tabel zawierających informacje o średnich dziennych kursach wybranych walut udostępnianych przez Narodowy Bank Polski.
+
+```{python}
+# Funkcja do wczytywania i czyszczenia danych
+def load_and_clean_data(url):
+    # Wczytanie danych z odpowiednim kodowaniem
+    data = pd.read_csv(url, sep=';', encoding='latin1')
+    
+    # Usunięcie pierwszego wiersza, który zawiera niepotrzebne informacje
+    data = data.drop(index=0)
+    
+    # Usunięcie kolumny "Unnamed: 36", która nie zawiera przydatnych danych
+    data = data.loc[:, ~data.columns.str.contains('Unnamed')]
+
+    # Usunięcie dwóch ostatnich kolumn
+    data = data.iloc[:, :-2]
+    
+    # Resetowanie indeksów
+    data.reset_index(drop=True, inplace=True)
+    
+    return data
+
+# Wczytanie i czyszczenie danych
+url_2023 = 'https://static.nbp.pl/dane/kursy/Archiwum/archiwum_tab_a_2023.csv'
+url_2024 = 'https://static.nbp.pl/dane/kursy/Archiwum/archiwum_tab_a_2024.csv'
+
+data_2023 = load_and_clean_data(url_2023)
+data_2024 = load_and_clean_data(url_2024)
+```
+
+2. Przekształcenie danych z formatu wider do fformatu longer oraz połączenie tabel z 2023 i 2024 roku w jedną.
+
+```{python}
+# Przekształcenie danych do formatu długiego
+data_2023_long = data_2023.melt(id_vars=['data'], var_name='currency', value_name='value')
+data_2024_long = data_2024.melt(id_vars=['data'], var_name='currency', value_name='value')
+
+# Połączenie tabel
+data_long = pd.concat([data_2023_long, data_2024_long])
+```
+
+Utworzenie tabeli wyjściowej zawierającej kolumny: `date`, `currency`, `value`.
+
+```{python}
+# Usunięcie wierszy z brakującymi wartościami
+data_long.dropna(inplace=True)
+
+# Usunięcie wierszy, które nie zawierają prawidłowych dat w kolumnie 'data'
+data_long = data_long[data_long['data'].str.match(r'\d{8}')]
+
+# Konwersja kolumny 'data' na typ daty
+data_long['data'] = pd.to_datetime(data_long['data'], format='%Y%m%d')
+
+# Usunięcie wierszy, które zawierają nieprawidłowe wartości w kolumnie 'value' (zakłożenie, że poprawne wartości walutowe są numeryczne)
+data_long = data_long[data_long['value'].str.replace(',', '').str.replace('.', '').str.isdigit()]
+
+# Zmiana separatora w liczbach z przecinka na kropkę i konwersja na typ float
+data_long['value'] = data_long['value'].str.replace(',', '.').astype(float)
+```
+
+3. Obliczanie (dla każdej z walut): minimalnej i maksymalnej wartości, kwartyli, średniej, odchylenia standardowego.
+
+```{python}
+# Lista walut
+currencies = data_long['currency'].unique()
+
+# Słownik do przechowywania wyników
+stats_summary = {}
+
+# Obliczenia statystyczne dla każdej waluty
+for currency in currencies:
+    currency_data = data_long[data_long['currency'] == currency]['value']
+    stats_summary[currency] = {
+        'min_value': currency_data.min(),
+        'max_value': currency_data.max(),
+        'Q1': currency_data.quantile(0.25),
+        'median': currency_data.median(),
+        'Q3': currency_data.quantile(0.75),
+        'mean_value': currency_data.mean(),
+        'std_dev': currency_data.std()
+    }
+
+# Konwersja słownika na DataFrame
+stats_summary_df = pd.DataFrame(stats_summary).T.reset_index()
+stats_summary_df = stats_summary_df.rename(columns={'index': 'currency'})
+```
+
+4.  Wyznaczanie 97% procentowych przedziałów ufności dla walut.
+
+```{python}
+# Słownik do przechowywania przedziałów ufności
+confidence_intervals = {}
+
+# Wyznaczenie przedziałów ufności dla każdej waluty
+for currency in currencies:
+    currency_data = data_long[data_long['currency'] == currency]['value']
+    confidence_interval = stats.t.interval(0.97, len(currency_data)-1, loc=np.mean(currency_data), scale=stats.sem(currency_data))
+    confidence_intervals[currency] = confidence_interval
+
+# Konwersja słownika na DataFrame
+confidence_intervals_df = pd.DataFrame(confidence_intervals).T.reset_index()
+confidence_intervals_df = confidence_intervals_df.rename(columns={'index': 'currency', 0: 'lower_bound', 1: 'upper_bound'})
+```
+
+Wynik przedstawiony w tabeli.
+
+```{python}
+print(confidence_intervals_df)
+```
+
+5. Przedziały ufności z pkt. 4 przedstawiony na wykresie.
+
+```{python}
+# Wykres przedziałów ufności
+plt.figure(figsize=(12, 8))
+for currency in currencies:
+    plt.errorbar(currency, (confidence_intervals_df[confidence_intervals_df['currency'] == currency]['lower_bound'] + confidence_intervals_df[confidence_intervals_df['currency'] == currency]['upper_bound']) / 2,
+                 yerr=(confidence_intervals_df[confidence_intervals_df['currency'] == currency]['upper_bound'] - confidence_intervals_df[confidence_intervals_df['currency'] == currency]['lower_bound']) / 2,
+                 fmt='o', label=currency)
+plt.xlabel('Waluta')
+plt.ylabel('Wartość')
+plt.title('Przedziały ufności (97%) dla różnych walut')
+plt.xticks(rotation=45)
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+6. Wyznaczanie kolejnych miesięcznych przedziałów ufności dla `EUR`. 
+
+```{python}
+# Wybór danych dotyczących EUR
+eur_data = data_long[data_long['currency'] == '1EUR']
+
+# Grupowanie danych miesięcznie
+eur_monthly = eur_data.groupby(pd.Grouper(key='data', freq='M'))
+
+# Obliczenie przedziałów ufności dla każdego miesiąca
+monthly_confidence_intervals = eur_monthly.apply(lambda x: stats.t.interval(0.97, len(x)-1, loc=np.mean(x['value']), scale=stats.sem(x['value'])))
+```
+
+Wyniki przedstawione na wykresie. Na wykresie uwzględnione zostały również średnie wartości.
+
+```{python}
+# Średnie wartości dla każdego miesiąca
+monthly_means = eur_monthly['value'].mean()
+
+# Wykres
+plt.figure(figsize=(12, 8))
+plt.errorbar(monthly_means.index, monthly_means, yerr=(monthly_confidence_intervals.apply(lambda x: (x[1]-x[0])/2)), fmt='o-', label='Średnia wartość', color='blue')
+plt.fill_between(monthly_means.index, monthly_confidence_intervals.apply(lambda x: x[0]), monthly_confidence_intervals.apply(lambda x: x[1]), alpha=0.3, color='gray', label='Przedział ufności (97%)')
+plt.xlabel('Data')
+plt.ylabel('Wartość')
+plt.title('Miesięczne przedziały ufności (97%) dla EUR')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+7. Oszacowanie współczynników korelacji dla wszystkich możliwych par walutowych.
+
+```{python}
+# Lista unikalnych walut
+unique_currencies = data_long['currency'].unique()
+
+# Obliczenie współczynnika korelacji dla każdej pary walutowej
+correlation_pairs = []
+for i in range(len(unique_currencies)):
+    for j in range(i+1, len(unique_currencies)):
+        currency1 = unique_currencies[i]
+        currency2 = unique_currencies[j]
+        pair_data = data_long[data_long['currency'].isin([currency1, currency2])]
+        correlation = pair_data.pivot_table(index='data', columns='currency', values='value').corr().iloc[0, 1]
+        correlation_pairs.append((currency1, currency2, correlation))
+```
+
+Wynik zapisany do tabeli, uporządkowany względem siły korelacji.
+
+```{python}
+# Konwersja wyników na ramkę danych
+correlation_df = pd.DataFrame(correlation_pairs, columns=['Currency 1', 'Currency 2', 'Correlation'])
+
+# Uporządkowanie według siły korelacji
+correlation_df['Absolute Correlation'] = correlation_df['Correlation'].abs()
+sorted_correlation_df = correlation_df.sort_values(by='Absolute Correlation', ascending=False)
+```
+
+Wyświetlenie 10 pierwszych par.
+
+```{python}
+top_10_pairs = sorted_correlation_df.head(10)
+print(top_10_pairs)
+```

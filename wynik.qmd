@@ -55,6 +55,7 @@ for index, row in all_dan.iterrows():
 # Convert the list of valid rows to a DataFrame
 valid_df = pd.DataFrame(valid_rows)
 
+
 # Save the valid DataFrame to a new CSV file
 output_file = 'converted_data.csv'
 valid_df.to_csv(output_file, index=False, sep=';', decimal=',')
