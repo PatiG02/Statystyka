@@ -14,11 +14,54 @@ import matplotlib.pyplot as plt
 
 ## Wczytanie danych
 ```{python}
-# Wczytanie danych z wielu plików CSV znajdujących się w określonym katalogu do jednej ramki danych
+# Directory and file extension
 directory = 'data'
 extension = ".csv"
+
+# List all CSV files in the directory
 files = [file for file in os.listdir(directory) if file.endswith(extension)]
+
+# Load all CSV files and concatenate them into one DataFrame
 all_dan = pd.concat([pd.read_csv(os.path.join(directory, file), sep=';', decimal=',') for file in files])
-print(all_dan)
+
+output_file = 'pre_converted_data.csv'
+all_dan.to_csv(output_file, index=False, sep=';', decimal=',')
+
+# Create a list to hold valid data
+valid_rows = []
+
+# Iterate over the DataFrame rows
+for index, row in all_dan.iterrows():
+    try:
+        # Convert 'Data' column to datetime
+        data = pd.to_datetime(row['Data'], format='%Y%m%d')
+        
+        # Convert 'Godz.' column to timedelta
+        godz = pd.to_timedelta(int(row['Godz.']), unit='h')
+        
+        # Create new datetime column
+        datetime_combined = data + godz
+        
+        # Append the valid row with the new datetime to the valid_rows list
+        valid_rows.append({
+            'datetime': datetime_combined,
+            'Dobowa prognoza zapotrzebowania KSE': row['Dobowa prognoza zapotrzebowania KSE'],
+            'Rzeczywiste zapotrzebowanie KSE': row['Rzeczywiste zapotrzebowanie KSE']
+        })
+    except ValueError as e:
+        # Log the error or print a message if needed
+        print(f"Error processing row {index}: {e}")
+
+# Convert the list of valid rows to a DataFrame
+valid_df = pd.DataFrame(valid_rows)
+
+# Save the valid DataFrame to a new CSV file
+output_file = 'converted_data.csv'
+valid_df.to_csv(output_file, index=False, sep=';', decimal=',')
+
+print("Processing complete. Valid data saved to 'converted_data.csv'.")
+
+print(valid_df)
+
 ```
 # Zmiana
