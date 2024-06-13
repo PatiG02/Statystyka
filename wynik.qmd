@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 ```
 
-## Wczytanie danych new added text
+## Wczytanie danych
 ```{python}
 # Wczytanie danych z wielu plików CSV znajdujących się w określonym katalogu do jednej ramki danych
 directory = 'data'
@@ -20,3 +20,4 @@ extension = ".csv"
 files = [file for file in os.listdir(directory) if file.endswith(extension)]
 all_dan = pd.concat([pd.read_csv(os.path.join(directory, file), sep=';', decimal=',') for file in files])
 ```
+# Zmiana
