@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 ```
 
-## Wczytanie danych addon
+## Wczytanie danych new added text
 ```{python}
 # Wczytanie danych z wielu plików CSV znajdujących się w określonym katalogu do jednej ramki danych
 directory = 'data'
