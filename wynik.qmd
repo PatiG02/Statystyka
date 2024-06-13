@@ -1,0 +1,14 @@
+---
+title: "Analiza danych z plików CSV"
+autor: "Patrycja Głuch "
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
+---
+
+## Wczytanie danych
+```{python}
+# Wczytanie danych z wielu plików CSV znajdujących się w określonym katalogu do jednej ramki danych
+directory = 'data'
+extension = ".csv"
+files = [file for file in os.listdir(directory) if file.endswith(extension)]
+all_dan
+```
