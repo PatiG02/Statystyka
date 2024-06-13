@@ -4,11 +4,19 @@ autor: "Patrycja Głuch "
 date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
 ---
 
+```{python}
+import pandas as pd
+import numpy as np
+import os
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+```
+
 ## Wczytanie danych addon
 ```{python}
 # Wczytanie danych z wielu plików CSV znajdujących się w określonym katalogu do jednej ramki danych
 directory = 'data'
 extension = ".csv"
 files = [file for file in os.listdir(directory) if file.endswith(extension)]
-all_dan
+all_dan = pd.concat([pd.read_csv(os.path.join(directory, file), sep=';', decimal=',') for file in files])
 ```
