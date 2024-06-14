@@ -1,0 +1,47 @@
+---
+title: "Analiza danych z plików CSV"
+autor: "Patrycja Głuch "
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
+---
+
+```{python}
+import pandas as pd
+```
+
+
+# Define the currencies with their base values
+```{python}
+# Define the path to the CSV file
+input_file = 'archiwum_tab_a_2023.csv'  
+
+# Read the first row to get the headers (currency codes)
+header_df = pd.read_csv(input_file, sep=';', decimal=',', nrows=0, encoding='latin1')
+currency_columns = header_df.columns[1:34]  # Assuming the first column is 'data' and the next 33 are currency columns
+
+# Read the full data including only the first 34 columns
+df = pd.read_csv(input_file, sep=';', decimal=',', usecols=['data'] + list(currency_columns), encoding='latin1')
+
+# Drop the first row if it contains non-data information (e.g., headers or descriptions)
+df = df.drop([0,1])
+
+# Find the first row with 'kod ISO' and slice the DataFrame
+for i, row in df.iterrows():
+    if 'kod ISO' in str(row['data']):
+        df = df.iloc[:i]
+        break
+
+# Melt the DataFrame to reshape it
+melted_df = df.melt(id_vars=['data'], var_name='currency', value_name='value')
+
+# Drop rows where 'value' is NaN
+melted_df = melted_df.dropna(subset=['value'])
+
+# Save the reshaped DataFrame to a new CSV file
+output_file = 'reshaped_data.csv'
+melted_df.to_csv(output_file, index=False, sep=';', encoding='latin1')
+
+# Print the reshaped DataFrame
+print("Reshaped Data:")
+print(melted_df)
+
+```
