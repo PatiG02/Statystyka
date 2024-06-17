@@ -73,6 +73,7 @@ output_file_24 = 'reshaped_data_24.csv'
 melted_df_24.to_csv(output_file_24, index=False, sep=';', encoding='latin1')
 
 # Połączenie tabel
+melted_df['data'] = pd.to_datetime(melted_df['data'], format='%Y%m%d')
 melted_df = pd.concat([melted_df_23, melted_df_24])
 output_file = 'reshaped_data.csv'
 melted_df.to_csv(output_file, index=False, sep=';', encoding='latin1')
