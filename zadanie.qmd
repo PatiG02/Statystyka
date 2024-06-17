@@ -105,15 +105,44 @@ print(currency_stats)
 # Słownik do przechowywania przedziałów ufności
 confidence_intervals = {}
 
-# Wyznaczenie przedziałów ufności dla każdej waluty
-for currency in currencies:
-    currency_data = data_long[data_long['currency'] == currency]['value']
-    confidence_interval = stats.t.interval(0.97, len(currency_data)-1, loc=np.mean(currency_data), scale=stats.sem(currency_data))
-    confidence_intervals[currency] = confidence_interval
+def calc_confidence_interval(data, confidence_level=0.97):
+  # Calculate sample mean and standard deviation
+  mean = data.mean()
+  std = data.std()
 
-# Konwersja słownika na DataFrame
-confidence_intervals_df = pd.DataFrame(confidence_intervals).T.reset_index()
-confidence_intervals_df = confidence_intervals_df.rename(columns={'index': 'currency', 0: 'lower_bound', 1: 'upper_bound'})
+  # Calculate critical value (t-score) for chosen confidence level
+  alpha = 1 - confidence_level  # significance level
+  t_crit = stats.t.ppf(1 - alpha / 2, len(data) - 1)  # one-tailed t-distribution
+
+  # Calculate margin of error
+  margin_of_error = t_crit * std / np.sqrt(len(data))
+
+  # Calculate confidence interval bounds
+  lower_bound = mean - margin_of_error
+  upper_bound = mean + margin_of_error
+
+  return lower_bound, upper_bound
+
+# Iterate through each currency group
+for name, group in melted_df.groupby('currency'):
+  # Calculate confidence interval
+  lower_bound, upper_bound = calc_confidence_interval(group['value'])
+
+  # Print results
+  print(f"Currency: {name}")
+  print(f"  - 97% Confidence Interval: ({lower_bound:.4f}, {upper_bound:.4f})")
+
+
+
+# # Wyznaczenie przedziałów ufności dla każdej waluty
+# for currency in currencies:
+#     currency_data = data_long[data_long['currency'] == currency]['value']
+#     confidence_interval = stats.t.interval(0.97, len(currency_data)-1, loc=np.mean(currency_data), scale=stats.sem(currency_data))
+#     confidence_intervals[currency] = confidence_interval
+
+# # Konwersja słownika na DataFrame
+# confidence_intervals_df = pd.DataFrame(confidence_intervals).T.reset_index()
+# confidence_intervals_df = confidence_intervals_df.rename(columns={'index': 'currency', 0: 'lower_bound', 1: 'upper_bound'})
 ```
 
 Wynik przedstawiony w tabeli.
