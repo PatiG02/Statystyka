@@ -132,8 +132,6 @@ for currency_data, group in melted_df.groupby('currency'):
   
 confidence_intervals_df = pd.DataFrame(confidence_intervals).T.reset_index()
 confidence_intervals_df = confidence_intervals_df.rename(columns={'index': 'currency', 0: 'lower_bound', 1: 'upper_bound'})
-print(confidence_intervals_df)
-
 ```
 
 Wynik przedstawiony w tabeli.
