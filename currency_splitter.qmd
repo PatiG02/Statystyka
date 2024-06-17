@@ -49,7 +49,7 @@ def split_number_from_chars(currency):
 melted_df[['number', 'currency']] = melted_df['currency'].apply(split_number_from_chars).apply(pd.Series)
 
 # Multiply the value by the extracted number
-melted_df['value'] = (melted_df['value'].str.replace(',', '.').astype(float) / melted_df['number']).round(4)
+melted_df['value'] = (melted_df['value'].str.replace(',', '.').astype(float) / melted_df['number']).round(6)
 
 # Drop the number column as it's no longer needed
 melted_df = melted_df.drop(columns=['number'])
