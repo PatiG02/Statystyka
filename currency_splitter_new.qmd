@@ -1,0 +1,72 @@
+---
+title: "Analiza danych z plików CSV"
+autor: "Patrycja Głuch "
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
+---
+
+```{python}
+import pandas as pd
+```
+
+
+# Define the currencies with their base values
+```{python}
+# Read the CSV file
+input_file = 'archiwum_tab_a_2023.csv'
+
+
+# Load the data into a DataFrame without headers
+df = pd.read_csv(input_file, sep=';', decimal=',', header=None, encoding='latin1')
+
+# Identify the index for the new header (third-to-last row)
+header_index = df.index[-3]
+
+# Extract the last line for the units
+units = df.iloc[header_index + 2]
+
+# Use the third-to-last row as the header
+df.columns = df.iloc[header_index]
+
+# Remove the first two rows and the last three rows
+df = df.drop([0, 1, header_index, header_index + 1, header_index + 2])
+
+# Reset the index
+df = df.reset_index(drop=True)
+
+# Rename the first column to 'data'
+df.columns = ['data'] + list(df.columns[1:])
+
+# Select only columns 1 to 34
+df = df.iloc[:, :34]
+
+# Melt the DataFrame to reshape it
+melted_df = df.melt(id_vars=['data'], var_name='currency', value_name='value')
+
+# Print units and currency columns for debugging
+print("Units:\n", units[1:34])
+print("Currency columns:\n", melted_df['currency'].unique())
+
+# Ensure the units dictionary matches the currency codes in the melted DataFrame
+units_dict = units[1:34].to_dict()
+
+# Map the units to the melted DataFrame and print the mapping for debugging
+melted_df['units'] = melted_df['currency'].map(units_dict)
+print("Mapped units:\n", melted_df[['currency', 'units']])
+
+# Convert value column to float, divide by the units, and round to 4 decimal places
+melted_df['value'] = melted_df.apply(lambda row: row['value'].str.replace(',', '.').astype(float) / row['units'] if row['units'] else row['value'], axis=1).round(4)
+
+# Drop the units column as it's no longer needed
+melted_df = melted_df.drop(columns=['units'])
+
+# Convert value column back to string with comma as decimal separator
+melted_df['value'] = melted_df['value'].astype(str).str.replace('.', ',')
+
+# Display the modified DataFrame
+print(melted_df)
+
+# Save the modified DataFrame to a CSV file
+melted_df.to_csv('reshaped_data.csv', sep=';', index=False)
+
+
+```
