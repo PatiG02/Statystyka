@@ -73,6 +73,7 @@ output_file_24 = 'reshaped_data_24.csv'
 melted_df_24.to_csv(output_file_24, index=False, sep=';', encoding='latin1')
 
 # Połączenie tabel
+melted_df = pd.concat([melted_df_23, melted_df_24])
 melted_df['data'] = pd.to_datetime(melted_df['data'], format='%Y%m%d')
 melted_df = pd.concat([melted_df_23, melted_df_24])
 output_file = 'reshaped_data.csv'
@@ -160,8 +161,8 @@ plt.figure(figsize=(9, 4))
 
 filtered_df = confidence_intervals_df[(confidence_intervals_df['mean'] > 5) & (confidence_intervals_df['mean'] < 6)]
 
-for i, row in filtered_df.iterrows():
-#for i, row in confidence_intervals_df.iterrows():    
+
+#for i, row in filtered_df.iterrows():
     plt.errorbar(row['currency'], row['mean'], yerr=[[row['mean'] - row['lower_bound']], [row['upper_bound'] - row['mean']]], fmt='.-', label=f'{row["currency"]} Mean')
 
 #plt.title('Currency Exchange Rates with 97% Confidence Intervals')
