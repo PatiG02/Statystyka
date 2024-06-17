@@ -160,8 +160,8 @@ plt.figure(figsize=(9, 4))
 
 filtered_df = confidence_intervals_df[(confidence_intervals_df['mean'] > 5) & (confidence_intervals_df['mean'] < 6)]
 
-
-#for i, row in filtered_df.iterrows():
+#for i, row in confidence_intervals_df.iterrows():
+for i, row in filtered_df.iterrows():
     plt.errorbar(row['currency'], row['mean'], yerr=[[row['mean'] - row['lower_bound']], [row['upper_bound'] - row['mean']]], fmt='.-', label=f'{row["currency"]} Mean')
 
 #plt.title('Currency Exchange Rates with 97% Confidence Intervals')
