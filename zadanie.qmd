@@ -56,7 +56,7 @@ melted_df_24[['number', 'currency']] = melted_df_24['currency'].apply(split_numb
 
 # Dzielenie wartości poprzez wsłczynnik zdefiniowany dla waluty
 melted_df_23['value'] = (melted_df_23['value'].str.replace(',', '.').astype(float) / melted_df_23['number']).round(6)
-melted_df_24['value'] = (melted_df_24['value'].str.replace(',', '.').astype(float) / melted_df_24['number']).round(6)
+melted_df_24['value'] = (melted_df_24['value'].str.replace(',', '.').astype(float)/ melted_df_24['number']).round(6)
 
 # Usnięcie kolumny 'number' po przeliczeniu
 melted_df_23 = melted_df_23.drop(columns=['number'])
@@ -126,12 +126,19 @@ confidence_intervals = {}
 
 # Iterate through each currency group
 for currency_data, group in melted_df.groupby('currency'):
-  # Calculate confidence interval
+# Calculate confidence interval
   lower_bound, upper_bound = calc_confidence_interval(group['value'])
   confidence_intervals[currency_data] = (lower_bound, upper_bound)
   
 confidence_intervals_df = pd.DataFrame(confidence_intervals).T.reset_index()
 confidence_intervals_df = confidence_intervals_df.rename(columns={'index': 'currency', 0: 'lower_bound', 1: 'upper_bound'})
+
+# ci_df = pd.DataFrame(columns=['currency', 'lower_bound', 'upper_bound'])
+# for currency_data, group in melted_df.groupby('currency'):
+#   lower_bound, upper_bound = calc_confidence_interval(group['value'])
+#   confidence_intervals[currency_data] = (lower_bound, upper_bound)  # optional for keeping dictionary
+
+# print(ci_df)
 ```
 
 Wynik przedstawiony w tabeli.
@@ -143,18 +150,25 @@ print(confidence_intervals_df)
 5. Przedziały ufności z pkt. 4 przedstawiony na wykresie.
 
 ```{python}
-# Wykres przedziałów ufności
-plt.figure(figsize=(12, 8))
-for currency in currencies:
-    plt.errorbar(currency, (confidence_intervals_df[confidence_intervals_df['currency'] == currency]['lower_bound'] + confidence_intervals_df[confidence_intervals_df['currency'] == currency]['upper_bound']) / 2,
-                 yerr=(confidence_intervals_df[confidence_intervals_df['currency'] == currency]['upper_bound'] - confidence_intervals_df[confidence_intervals_df['currency'] == currency]['lower_bound']) / 2,
-                 fmt='o', label=currency)
-plt.xlabel('Waluta')
-plt.ylabel('Wartość')
-plt.title('Przedziały ufności (97%) dla różnych walut')
+
+# Calculate mean
+confidence_intervals_df['mean'] = (confidence_intervals_df['lower_bound'] + confidence_intervals_df['upper_bound']) / 2
+
+# Plotting the confidence intervals
+plt.figure(figsize=(9, 4))
+
+filtered_df = confidence_intervals_df[(confidence_intervals_df['mean'] > 5) & (confidence_intervals_df['mean'] < 6)]
+
+for i, row in filtered_df.iterrows():
+#for i, row in confidence_intervals_df.iterrows():    
+    plt.errorbar(row['currency'], row['mean'], yerr=[[row['mean'] - row['lower_bound']], [row['upper_bound'] - row['mean']]], fmt='.-', label=f'{row["currency"]} Mean')
+
+#plt.title('Currency Exchange Rates with 97% Confidence Intervals')
+plt.xlabel('Currency')
+plt.ylabel('Exchange Rate')
 plt.xticks(rotation=45)
-plt.legend()
 plt.grid(True)
+plt.tight_layout()
 plt.show()
 ```
 
