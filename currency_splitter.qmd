@@ -24,11 +24,14 @@ df = pd.read_csv(input_file, sep=';', decimal=',', usecols=['data'] + list(curre
 # Drop the first row if it contains non-data information (e.g., headers or descriptions)
 df = df.drop([0,1])
 
-# Find the first row with 'kod ISO' and slice the DataFrame
-for i, row in df.iterrows():
-    if 'kod ISO' in str(row['data']):
-        df = df.iloc[:i]
-        break
+# Remove the last 3 lines of data
+df_trimmed = df[:-3]
+
+# Display the first and last few rows of the trimmed dataframe to verify
+print(df_trimmed.head())
+print(df_trimmed.tail())
+
+df = df_trimmed
 
 # Melt the DataFrame to reshape it
 melted_df = df.melt(id_vars=['data'], var_name='currency', value_name='value')
