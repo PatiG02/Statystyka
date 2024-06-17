@@ -102,8 +102,6 @@ print(currency_stats)
 4.  Wyznaczanie 97% procentowych przedziałów ufności dla walut.
 
 ```{python}
-# Słownik do przechowywania przedziałów ufności
-confidence_intervals = {}
 
 def calc_confidence_interval(data, confidence_level=0.97):
   # Calculate sample mean and standard deviation
@@ -123,24 +121,19 @@ def calc_confidence_interval(data, confidence_level=0.97):
 
   return lower_bound, upper_bound
 
+# Słownik do przechowywania przedziałów ufności
+confidence_intervals = {}
+
 # Iterate through each currency group
-for name, group in melted_df.groupby('currency'):
+for currency_data, group in melted_df.groupby('currency'):
   # Calculate confidence interval
   lower_bound, upper_bound = calc_confidence_interval(group['value'])
+  confidence_intervals[currency_data] = (lower_bound, upper_bound)
+  
+confidence_intervals_df = pd.DataFrame(confidence_intervals).T.reset_index()
+confidence_intervals_df = confidence_intervals_df.rename(columns={'index': 'currency', 0: 'lower_bound', 1: 'upper_bound'})
+print(confidence_intervals_df)
 
-  # Print results
-  print(f"Currency: {name}")
-  print(f"  - 97% Confidence Interval: ({lower_bound:.4f}, {upper_bound:.4f})")
-
-# # Wyznaczenie przedziałów ufności dla każdej waluty
-# for currency in currencies:
-#     currency_data = data_long[data_long['currency'] == currency]['value']
-#     confidence_interval = stats.t.interval(0.97, len(currency_data)-1, loc=np.mean(currency_data), scale=stats.sem(currency_data))
-#     confidence_intervals[currency] = confidence_interval
-
-# # Konwersja słownika na DataFrame
-# confidence_intervals_df = pd.DataFrame(confidence_intervals).T.reset_index()
-# confidence_intervals_df = confidence_intervals_df.rename(columns={'index': 'currency', 0: 'lower_bound', 1: 'upper_bound'})
 ```
 
 Wynik przedstawiony w tabeli.
