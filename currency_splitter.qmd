@@ -6,13 +6,16 @@ date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
 
 ```{python}
 import pandas as pd
+import re
 ```
 
 
 # Define the currencies with their base values
 ```{python}
 # Define the path to the CSV file
-input_file = 'archiwum_tab_a_2023.csv'  
+# input_file = 'archiwum_tab_a_2023.csv'  
+input_file = 'https://static.nbp.pl/dane/kursy/Archiwum/archiwum_tab_a_2023.csv'
+url_2024 = 'https://static.nbp.pl/dane/kursy/Archiwum/archiwum_tab_a_2024.csv'
 
 # Read the first row to get the headers (currency codes)
 header_df = pd.read_csv(input_file, sep=';', decimal=',', nrows=0, encoding='latin1')
@@ -36,8 +39,29 @@ df = df_trimmed
 # Melt the DataFrame to reshape it
 melted_df = df.melt(id_vars=['data'], var_name='currency', value_name='value')
 
-# Drop rows where 'value' is NaN
-melted_df = melted_df.dropna(subset=['value'])
+# Function to extract number and currency from the currency column
+def split_number_from_chars(currency):
+    match = re.match(r"(\d+)(\D+)", currency)
+    if match:
+        number, chars = match.groups()
+        return int(number), chars
+    return 1, currency  # Default to 1 if no number is found
+
+# Apply the function to the currency column
+melted_df[['number', 'currency']] = melted_df['currency'].apply(split_number_from_chars).apply(pd.Series)
+
+# Multiply the value by the extracted number
+melted_df['value'] = (melted_df['value'].str.replace(',', '.').astype(float) / melted_df['number']).round(6)
+
+# Drop the number column as it's no longer needed
+melted_df = melted_df.drop(columns=['number'])
+
+# Convert value column back to string with comma as decimal separator if needed
+melted_df['value'] = melted_df['value'].astype(str).str.replace('.', ',')
+
+# Display the modified DataFrame
+#print(melted_df)
+
 
 # Save the reshaped DataFrame to a new CSV file
 output_file = 'reshaped_data.csv'
