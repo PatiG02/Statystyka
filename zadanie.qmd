@@ -50,7 +50,7 @@ def split_number_from_chars(currency):
         return int(number), chars
     return 1, currency 
 
-# ZAstosowanie powyższej funkcji
+# Zastosowanie powyższej funkcji
 melted_df_23[['number', 'currency']] = melted_df_23['currency'].apply(split_number_from_chars).apply(pd.Series)
 melted_df_24[['number', 'currency']] = melted_df_24['currency'].apply(split_number_from_chars).apply(pd.Series)
 
@@ -75,7 +75,6 @@ melted_df_24.to_csv(output_file_24, index=False, sep=';', encoding='latin1')
 # Połączenie tabel
 melted_df = pd.concat([melted_df_23, melted_df_24])
 melted_df['data'] = pd.to_datetime(melted_df['data'], format='%Y%m%d')
-melted_df = pd.concat([melted_df_23, melted_df_24])
 output_file = 'reshaped_data.csv'
 melted_df.to_csv(output_file, index=False, sep=';', encoding='latin1')
 
