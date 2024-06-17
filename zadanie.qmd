@@ -132,8 +132,6 @@ for name, group in melted_df.groupby('currency'):
   print(f"Currency: {name}")
   print(f"  - 97% Confidence Interval: ({lower_bound:.4f}, {upper_bound:.4f})")
 
-
-
 # # Wyznaczenie przedziałów ufności dla każdej waluty
 # for currency in currencies:
 #     currency_data = data_long[data_long['currency'] == currency]['value']
